@@ -5,7 +5,7 @@ import ProfileModal from './ProfileModal';
 import OtherUserProfileModal from './OtherUserProfileModal';
 
 export default function Sidebar({ view, setView, activeDm, setActiveDm, theme, toggleTheme }) {
-  const { user, logout, getAllUsers } = useAuth();
+  const { user, logout, allUsers } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProfile, setSelectedProfile] = useState(null);
@@ -20,8 +20,6 @@ export default function Sidebar({ view, setView, activeDm, setActiveDm, theme, t
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-
-  const allUsers = getAllUsers();
 
   // Search results
   const searchResults = useMemo(() => {
