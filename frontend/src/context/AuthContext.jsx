@@ -56,7 +56,16 @@ export function AuthProvider({ children }) {
           setUser({ ...userDoc.data(), id: firebaseUser.uid, email: firebaseUser.email, uid: firebaseUser.uid });
         } else {
           // Fallback if doc doesn't exist yet
-          const fallback = { id: firebaseUser.uid, name: firebaseUser.displayName || 'User', avatar: '', email: firebaseUser.email };
+          const fallback = { 
+            id: firebaseUser.uid, 
+            uid: firebaseUser.uid,
+            name: firebaseUser.displayName || 'User', 
+            avatar: '', 
+            email: firebaseUser.email,
+            friends: [],
+            friendRequests: [],
+            sentRequests: []
+          };
           setUser(fallback);
         }
       } else {

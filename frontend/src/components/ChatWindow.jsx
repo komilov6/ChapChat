@@ -102,7 +102,7 @@ export default function ChatWindow({ isGlobal, partner, goToDm }) {
   // Firestore Chat Id logic
   const chatId = isGlobal 
     ? 'global' 
-    : [currentUser.id, partner.id].sort().join('_');
+    : (currentUser && partner) ? [currentUser.id, partner.id].sort().join('_') : 'temp';
 
   useEffect(() => {
     setMessages([]);

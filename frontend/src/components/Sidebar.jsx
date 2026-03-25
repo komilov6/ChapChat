@@ -23,22 +23,24 @@ export default function Sidebar({ view, setView, activeDm, setActiveDm, theme, t
 
   // Search results
   const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
+    if (!searchQuery.trim() || !user) return [];
     const q = searchQuery.toLowerCase();
     return allUsers.filter(u => u.id !== user.id && (
-      u.name.toLowerCase().includes(q) || 
-      u.tag.toLowerCase().includes(q)
+      u.name?.toLowerCase().includes(q) || 
+      u.tag?.toLowerCase().includes(q)
     ));
-  }, [searchQuery, allUsers, user.id]);
+  }, [searchQuery, allUsers, user?.id]);
 
   // Friend lists
   const friends = useMemo(() => {
+    if (!user) return [];
     return allUsers.filter(u => user.friends?.includes(u.id));
-  }, [user.friends, allUsers]);
+  }, [user?.friends, allUsers]);
 
   const friendRequests = useMemo(() => {
+    if (!user) return [];
     return allUsers.filter(u => user.friendRequests?.includes(u.id));
-  }, [user.friendRequests, allUsers]);
+  }, [user?.friendRequests, allUsers]);
 
   const dmList = friends; // Only show friends in DM list
 
