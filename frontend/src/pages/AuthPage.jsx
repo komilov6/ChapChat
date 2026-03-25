@@ -17,12 +17,12 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (mode === 'login') {
-        await login(form.username, form.password);
+        login(form.username, form.password);
       } else {
         if (!form.displayName.trim()) throw new Error('Ism majburiy');
         if (form.password.length < 4) throw new Error('Parol kamida 4 ta belgidan iborat bo\'lishi kerak');
         if (form.password !== form.confirm) throw new Error('Parollar mos kelmadi');
-        await register(form.username, form.displayName, form.password);
+        register(form.username, form.displayName, form.password);
       }
     } catch (err) {
       setError(err.message);

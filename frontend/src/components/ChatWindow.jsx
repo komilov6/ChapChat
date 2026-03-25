@@ -1,41 +1,28 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth, formatLastSeen } from '../context/AuthContext';
-import { formatTime, formatDate } from '../data/chatData';
+import { USERS, getGlobalMessages, getDmMessages, GLOBAL_BOT_REPLIES, DM_BOT_REPLIES, formatTime, formatDate } from '../data/chatData';
 import EmojiPicker from './EmojiPicker';
 import PrivateVoiceCall from './PrivateVoiceCall';
 import OtherUserProfileModal from './OtherUserProfileModal';
-import { 
-  collection, 
-  addDoc, 
-  onSnapshot, 
-  query, 
-  orderBy, 
-  serverTimestamp, 
-  where 
-} from 'firebase/firestore';
-import { db } from '../firebase';
 
 function getUserById(id, currentUser, allUsers) {
-  if (id === currentUser?.id || id === currentUser?.uid) return currentUser;
-  return allUsers.find(u => u.id === id) || { name: 'User', avatar: '' };
+  if (id === 'me' || id === currentUser?.id) return currentUser;
+  return allUsers.find(u => u.id === id) || currentUser;
 }
 
 function MessageRow({ msg, prevMsg, currentUser, allUsers, onAvatarClick }) {
   const [lightbox, setLightbox] = useState(null);
   const user = getUserById(msg.userId, currentUser, allUsers);
-  const isSelf = msg.userId === currentUser?.id || msg.userId === currentUser?.uid;
-  const msgTime = msg.time?.toDate?.() || new Date(msg.time || Date.now());
-  const prevMsgTime = prevMsg?.time?.toDate?.() || new Date(prevMsg?.time || Date.now());
-
+  const isSelf = msg.userId === 'me' || msg.userId === currentUser?.id;
   const continued = prevMsg &&
     prevMsg.userId === msg.userId &&
-    (msgTime - prevMsgTime) < 2 * 60 * 1000;
+    (msg.time - prevMsg.time) < 2 * 60 * 1000;
 
   return (
     <>
-      {(!prevMsg || formatDate(prevMsgTime) !== formatDate(msgTime)) && (
+      {(!prevMsg || formatDate(prevMsg.time) !== formatDate(msg.time)) && (
         <div className="date-divider">
-          <span className="date-divider-label">{formatDate(msgTime)}</span>
+          <span className="date-divider-label">{formatDate(msg.time)}</span>
         </div>
       )}
       <div className={`msg-row ${isSelf ? 'self' : ''}`}>
@@ -50,7 +37,7 @@ function MessageRow({ msg, prevMsg, currentUser, allUsers, onAvatarClick }) {
           {!continued && (
             <div className="msg-meta">
               {!isSelf && <span className="msg-sender" style={{ color: user?.color }}>{user?.name}</span>}
-              <span>{formatTime(msgTime)}</span>
+              <span>{formatTime(msg.time)}</span>
             </div>
           )}
           {msg.text && (
@@ -84,7 +71,7 @@ function MessageRow({ msg, prevMsg, currentUser, allUsers, onAvatarClick }) {
 export default function ChatWindow({ isGlobal, partner, goToDm }) {
   const { user: currentUser, getAllUsers } = useAuth();
   const allUsers = getAllUsers();
-  const [messages,     setMessages]     = useState([]);
+  const [messages,     setMessages]     = useState(() => isGlobal ? getGlobalMessages() : getDmMessages(partner?.id));
   const [input,        setInput]        = useState('');
   const [pendingMedia, setPendingMedia] = useState([]);
   const [isTyping,     setIsTyping]     = useState(false);
@@ -99,56 +86,36 @@ export default function ChatWindow({ isGlobal, partner, goToDm }) {
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Firestore Chat Id logic
-  const chatId = isGlobal 
-    ? 'global' 
-    : (currentUser && partner) ? [currentUser.id, partner.id].sort().join('_') : 'temp';
-
   useEffect(() => {
-    setMessages([]);
-    const q = query(
-      collection(db, 'messages'),
-      where('chatId', '==', chatId),
-      orderBy('time', 'asc')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMessages(msgs);
-    });
-
-    return () => unsubscribe();
-  }, [chatId]);
+    setMessages(isGlobal ? getGlobalMessages() : getDmMessages(partner?.id));
+    setInput('');
+    setPendingMedia([]);
+    setShowEmoji(false);
+    setInCall(false);
+    setShowSearchBar(false);
+    setMsgSearchQuery('');
+  }, [isGlobal, partner?.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = useCallback(async () => {
+  const handleSend = useCallback(() => {
     const text = input.trim();
     if (!text && pendingMedia.length === 0) return;
-
     const newMsg = {
-      chatId,
-      userId: currentUser.id,
+      id: Date.now(),
+      userId: 'me',
       text: text || null,
-      time: serverTimestamp(),
+      time: Date.now(),
       media: pendingMedia.length > 0 ? [...pendingMedia] : null,
     };
-
+    setMessages(prev => [...prev, newMsg]);
     setInput('');
     setPendingMedia([]);
     setShowEmoji(false);
-    
-    try {
-      await addDoc(collection(db, 'messages'), newMsg);
-    } catch (err) {
-      console.error("Error sending message:", err);
-    }
-    
     inputRef.current?.focus();
-  }, [input, pendingMedia, chatId, currentUser]);
-
+  }, [input, pendingMedia, isGlobal, partner]);
 
   const handleKeyDown = e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
