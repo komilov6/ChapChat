@@ -65,7 +65,7 @@ export default function Sidebar({ view, setView, activeDm, setActiveDm, theme, t
         <div className="sidebar-top">
           <div className="sidebar-logo">
             <div className="sidebar-logo-icon">💬</div>
-            <span>ChitChat</span>
+            <span>ChapChat</span>
           </div>
         </div>
 

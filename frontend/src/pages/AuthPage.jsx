@@ -37,7 +37,7 @@ export default function AuthPage() {
         {/* Logo */}
         <div className="auth-logo">
           <div className="auth-logo-icon">💬</div>
-          <div className="auth-logo-text">ChitChat</div>
+          <div className="auth-logo-text">ChapChat</div>
         </div>
 
         <div className="auth-title">
